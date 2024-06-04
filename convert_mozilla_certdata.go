@@ -17,7 +17,8 @@
 // certificates in PEM form.
 //
 // A current version of certdata.txt can be downloaded from:
-//   https://hg.mozilla.org/mozilla-central/raw-file/tip/security/nss/lib/ckfw/builtins/certdata.txt
+//
+//	https://hg.mozilla.org/mozilla-central/raw-file/tip/security/nss/lib/ckfw/builtins/certdata.txt
 package main
 
 import (
@@ -58,9 +59,9 @@ var (
 	// certificates.
 	ignoreList map[string]string
 
-	includedUntrustedFlag = flag.Bool("include-untrusted", false, "If set, untrusted certificates will also be included in the output")
-	toFiles               = flag.Bool("to-files", false, "If set, individual certificate files will be created in the current directory")
-	ignoreListFilename    = flag.String("ignore-list", "", "File containing a list of certificates to ignore")
+	includeUntrustedFlag = flag.Bool("include-untrusted", false, "If set, untrusted certificates will also be included in the output")
+	toFiles              = flag.Bool("to-files", false, "If set, individual certificate files will be created in the current directory")
+	ignoreListFilename   = flag.String("ignore-list", "", "File containing a list of certificates to ignore")
 )
 
 func main() {
@@ -275,7 +276,7 @@ func outputTrustedCerts(out *os.File, objects []*Object) {
 			log.Fatalf("Unknown trust value '%s' found for trust record starting on line %d", trustType, trust.startingLine)
 		}
 
-		if !trusted && !*includedUntrustedFlag {
+		if !trusted && !*includeUntrustedFlag {
 			continue
 		}
 
