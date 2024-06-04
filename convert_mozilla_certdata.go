@@ -62,6 +62,7 @@ var (
 	includeUntrustedFlag = flag.Bool("include-untrusted", false, "If set, untrusted certificates will also be included in the output")
 	toFiles              = flag.Bool("to-files", false, "If set, individual certificate files will be created in the current directory")
 	ignoreListFilename   = flag.String("ignore-list", "", "File containing a list of certificates to ignore")
+	writePEMHeaders      = flag.Bool("write-pem-headers", false, "If set, metadata will be written into PEM headers")
 )
 
 func main() {
@@ -281,6 +282,13 @@ func outputTrustedCerts(out *os.File, objects []*Object) {
 		}
 
 		block := &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}
+
+		if *writePEMHeaders {
+			block.Headers = map[string]string{
+				"Label":            unquoteLabel(label),
+				"Trust-ServerAuth": fmt.Sprintf("%t", trusted),
+			}
+		}
 
 		if *toFiles {
 			if strings.HasPrefix(label, "\"") {
@@ -510,4 +518,14 @@ func unescapeLabel(escaped string) string {
 	}
 
 	return string(out)
+}
+
+func unquoteLabel(label string) string {
+	if strings.HasPrefix(label, "\"") {
+		label = label[1:]
+	}
+	if strings.HasSuffix(label, "\"") {
+		label = label[:len(label)-1]
+	}
+	return unescapeLabel(label)
 }
