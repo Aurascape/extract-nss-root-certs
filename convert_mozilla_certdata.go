@@ -17,7 +17,8 @@
 // certificates in PEM form.
 //
 // A current version of certdata.txt can be downloaded from:
-//   https://hg.mozilla.org/mozilla-central/raw-file/tip/security/nss/lib/ckfw/builtins/certdata.txt
+//
+//	https://raw.githubusercontent.com/mozilla-firefox/firefox/release/security/nss/lib/ckfw/builtins/certdata.txt
 package main
 
 import (
@@ -37,6 +38,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -64,7 +66,6 @@ var (
 )
 
 func main() {
-
 	flag.Parse()
 
 	inFilename := "certdata.txt"
@@ -322,11 +323,34 @@ func outputTrustedCerts(out *os.File, objects []*Object) {
 		out.WriteString("# Subject: " + nameToString(x509.Subject) + "\n")
 		out.WriteString("# Label: " + label + "\n")
 		out.WriteString("# Serial: " + x509.SerialNumber.String() + "\n")
+		if t, ok := distrustAfter(cert, "CKA_NSS_SERVER_DISTRUST_AFTER"); ok {
+			out.WriteString("# Server Distrust After: " + t.Format(time.RFC3339) + "\n")
+			out.WriteString("#   (Mozilla rejects server certificates issued by this root after that\n")
+			out.WriteString("#   date. This cannot be expressed in a PEM bundle.)\n")
+		}
+		if t, ok := distrustAfter(cert, "CKA_NSS_EMAIL_DISTRUST_AFTER"); ok {
+			out.WriteString("# Email Distrust After: " + t.Format(time.RFC3339) + "\n")
+		}
 		out.WriteString("# MD5 Fingerprint: " + fingerprintString(crypto.MD5, x509.Raw) + "\n")
 		out.WriteString("# SHA1 Fingerprint: " + fingerprintString(crypto.SHA1, x509.Raw) + "\n")
 		out.WriteString("# SHA256 Fingerprint: " + fingerprintString(crypto.SHA256, x509.Raw) + "\n")
 		pem.Encode(out, block)
 	}
+}
+
+// distrustAfter returns the time contained in a CKA_NSS_SERVER_DISTRUST_AFTER
+// or CKA_NSS_EMAIL_DISTRUST_AFTER attribute of cert.
+func distrustAfter(cert *Object, attrName string) (time.Time, bool) {
+	attr, present := cert.attrs[attrName]
+	if !present || attr.attrType != "MULTILINE_OCTAL" {
+		return time.Time{}, false
+	}
+	// The value is an ASN.1 UTCTime string such as "241130235959Z".
+	t, err := time.Parse("060102150405Z0700", string(attr.value))
+	if err != nil {
+		log.Fatalf("Failed to parse %s value %q starting on line %d: %s", attrName, attr.value, cert.startingLine, err)
+	}
+	return t, true
 }
 
 // nameToString converts name into a string representation containing the
