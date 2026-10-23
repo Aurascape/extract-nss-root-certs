@@ -19,6 +19,7 @@ Flags:
 * `-include-untrusted`: also emit certificates that are not trusted for TLS, marked with a `# NOT TRUSTED FOR SSL` comment.
 * `-to-files`: write each certificate to an individual `.pem` file in the current directory instead of writing a bundle to stdout.
 * `-ignore-list <file>`: skip certificates whose `CKA_LABEL` appears in the given file (one label per line, `#` starts a comment).
+* `-write-pem-headers`: write metadata into the PEM headers of each block: `Label` (the `CKA_LABEL`), `Trust-ServerAuth` (`true` or `false`), and `Trust-ServerAuth-IssuedNotAfter` (the `CKA_NSS_SERVER_DISTRUST_AFTER` time in RFC 3339, only when set). A verifier that reads `Trust-ServerAuth-IssuedNotAfter` must reject a chain whose end-entity certificate has a `NotBefore` later than that time. The bound is inclusive, like X.509 `NotAfter`.
 
 Time-based distrust
 -------------------

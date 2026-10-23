@@ -309,6 +309,13 @@ func outputTrustedCerts(out io.Writer, objects []*Object, ignoreList map[string]
 				"Label":            unquoteLabel(label),
 				"Trust-ServerAuth": fmt.Sprintf("%t", trusted),
 			}
+			// CKA_NSS_SERVER_DISTRUST_AFTER constrains the end-entity
+			// certificate, not the root: Mozilla rejects a chain whose leaf
+			// has a NotBefore later than this time. The header says that
+			// trust for server auth covers leaves issued not after the time.
+			if t, ok := distrustAfter(cert, "CKA_NSS_SERVER_DISTRUST_AFTER"); ok {
+				block.Headers["Trust-ServerAuth-IssuedNotAfter"] = t.Format(time.RFC3339)
+			}
 		}
 
 		if *toFiles {
